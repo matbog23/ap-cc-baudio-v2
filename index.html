@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Play Music based on Sentiment</title>
+    <!-- Include Tone.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.37/Tone.min.js"></script>
+  </head>
+  <body>
+    <button id="startPlaybackButton">Start Music</button>
+
+    <script>
+      const socket = new WebSocket("ws://localhost:8765");
+      let isMusicPlaying = false; // Flag to track if music is already playing
+      let currentSequence = null; // Variable to store the current sequence
+      let currentSequenceMood = null; // Variable to store the mood of the current sequence
+
+      socket.onopen = function (event) {
+        console.log("WebSocket connection established.");
+      };
+
+      // Define music sequences for different moods
+      const sequences = {
+        angry: ["C4", "D4", "F4", "G4", "A#4"],
+        sad: ["E4", "G4", "A4", "A#4", "D5"],
+        happy: ["C4", "E4", "G4", "C5", "G4"],
+        neutral: ["C4", "D4", "E4", "F4", "G4"],
+      };
+
+      // Function to play music based on mood
+      function playMusic(mood) {
+        // Check if the mood is different from the current sequence
+        if (mood !== "" && mood !== currentSequenceMood) {
+          // Stop the current sequence if it exists
+          if (currentSequence !== null) {
+            currentSequence.stop();
+          }
+
+          const notes = sequences[mood];
+          const synth = new Tone.Synth().toDestination();
+          const sequence = new Tone.Sequence(
+            (time, note) => {
+              synth.triggerAttackRelease(note, "8n", time);
+            },
+            notes,
+            "8n"
+          );
+
+          // Start the music only if it's not already playing
+          if (!isMusicPlaying) {
+            Tone.start(); // Start Tone.js audio context
+            Tone.Transport.start();
+            sequence.start();
+            isMusicPlaying = true;
+          } else {
+            // Update the sequence if music is already playing
+            sequence.start();
+          }
+
+          // Update the current sequence and mood
+          currentSequence = sequence;
+          currentSequenceMood = mood;
+        }
+      }
+
+      // Add event listener to start playback button
+      const startPlaybackButton = document.getElementById(
+        "startPlaybackButton"
+      );
+      startPlaybackButton.addEventListener("click", async function () {
+        // Send request to server to get sentiment
+        // For demonstration purposes, let's assume sentiment is "happy"
+        const sentiment = "";
+        console.log("Sentiment requested:", sentiment);
+
+        // Await the playMusic function
+        playMusic(sentiment); //await
+
+        // This code will only execute after playMusic has finished
+        console.log("Music playback complete.");
+      });
+
+      // Handle WebSocket message
+      socket.onmessage = async function (event) {
+        const sentiment = event.data;
+        console.log("Received sentiment from server:", sentiment);
+
+        // Play music based on sentiment
+        playMusic(sentiment); //await
+
+        // This code will only execute after playMusic has finished
+        console.log("Music playback complete.");
+      };
+    </script>
+  </body>
+</html>
