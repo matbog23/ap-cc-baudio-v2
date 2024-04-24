@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Play Music based on Sentiment</title>
+    <!-- Include Tone.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.37/Tone.min.js"></script>
+  </head>
+  <body>
+    <button id="startPlaybackButton">Start Music</button>
+
+    <script>
+      const socket = new WebSocket("ws://localhost:8765");
+      let isMusicPlaying = false; // Flag to track if music is already playing
+      let currentPlayer = null; // Variable to store the current player
+      let currentMood = null; // Variable to store the mood of the current player
+
+      socket.onopen = function (event) {
+        console.log("WebSocket connection established.");
+      };
+
+      // Define audio file paths for different moods
+      const audioFiles = {
+        angry: "https://matbog23.github.io/ap-cc-audiofiles/angry.mp3",
+        sad: "https://matbog23.github.io/ap-cc-audiofiles/sad.mp3",
+        happy: "https://matbog23.github.io/ap-cc-audiofiles/happy.mp3",
+        neutral: "https://matbog23.github.io/ap-cc-audiofiles/neutral.mp3",
+      };
+
+      // Function to preload audio files
+      async function preloadAudioFiles() {
+        for (const mood in audioFiles) {
+          const audioFile = audioFiles[mood];
+          await new Promise((resolve) => {
+            const player = new Tone.Player(audioFile, () => {
+              console.log(`Audio file for ${mood} loaded.`);
+              resolve();
+            }).toDestination();
+            player.autostart = false;
+            player.loop = true; // Enable looping
+            player.load();
+          });
+        }
+      }
+
+      // Function to play music based on mood
+      function playMusic(mood) {
+        // Check if the mood is different from the current player
+        if (mood !== "" && mood !== currentMood) {
+          // Stop the current player if it exists
+          if (currentPlayer !== null) {
+            currentPlayer.stop();
+          }
+
+          const audioFile = audioFiles[mood];
+          const player = new Tone.Player(audioFile).toDestination();
+          player.autostart = true;
+
+          // Update the current player and mood
+          currentPlayer = player;
+          currentMood = mood;
+        }
+      }
+
+      // Add event listener to start playback button
+      const startPlaybackButton = document.getElementById(
+        "startPlaybackButton"
+      );
+      startPlaybackButton.addEventListener("click", async function () {
+        // Preload audio files before starting playback
+        await preloadAudioFiles();
+
+        // Send request to server to get sentiment
+        // For demonstration purposes, let's assume sentiment is "happy"
+        const sentiment = "";
+        console.log("Sentiment requested:", sentiment);
+
+        // Play music based on sentiment
+        playMusic(sentiment);
+
+        // This code will only execute after playMusic has finished
+        console.log("Music playback complete.");
+      });
+
+      // Handle WebSocket message
+      socket.onmessage = async function (event) {
+        const sentiment = event.data;
+        console.log("Received sentiment from server:", sentiment);
+
+        // Preload audio files before starting playback
+        await preloadAudioFiles();
+
+        // Play music based on sentiment
+        playMusic(sentiment);
+
+        // This code will only execute after playMusic has finished
+        console.log("Music playback complete.");
+      };
+    </script>
+  </body>
+</html>

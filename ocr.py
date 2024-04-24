@@ -36,7 +36,7 @@ def analyzeTextSentiment(prompt):
         "top_p": 1,
         "n": 1,
         "messages": [
-            {"role": "system", "content": "You are a system that understands the data gathered from a book using OCR, analyzes the text and then returns the predominant feeling in a single word. You can only pick from the list: happy, sad, angry or neutral."},
+            {"role": "system", "content": "You are a system that understands the data gathered from a book using OCR, analyzes the text and then returns the predominant feeling in a single word. You can only pick from the list: happy, sad, angry or neutral. Keep in mind that youa re reading children books so the feelings are not too complex."},
             {"role": "user", "content": "Please analyze the text and determine the predominant feeling. Answer in a single word from the list: happy, sad, angry or neutral." + prompt},
             {"role": "assistant", "content": "You can only answer with a single word, from the list: happy, sad, angry or neutral. write the answer in lower case."},
         ]
@@ -58,7 +58,7 @@ async def send_result(websocket, path):
     print("Client connected")
 
     # Capture frame-by-frame
-    cap = cv2.VideoCapture(0)  # adjust, 0 = computer webcam, 1 = external webcam
+    cap = cv2.VideoCapture(1)  # adjust, 0 = computer webcam, 1 = external webcam
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1080)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
