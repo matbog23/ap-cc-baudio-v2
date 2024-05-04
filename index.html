@@ -13,60 +13,64 @@
     <script>
       const socket = new WebSocket("ws://localhost:8765");
       let isMusicPlaying = false; // Flag to track if music is already playing
-      let currentSequence = null; // Variable to store the current sequence
-      let currentSequenceMood = null; // Variable to store the mood of the current sequence
+      let currentPlayer = null; // Variable to store the current player
+      let currentMood = null; // Variable to store the mood of the current player
 
       socket.onopen = function (event) {
         console.log("WebSocket connection established.");
       };
 
-      // Define music sequences for different moods
-      /*const sequences = {
-        angry: ["C4", "D4", "F4", "G4", "A#4"],
-        sad: ["E4", "G4", "A4", "A#4", "D5"],
-        happy: ["C4", "E4", "G4", "C5", "G4"],
-        neutral: ["C4", ["E4", "G4", "C5"], "E5", "E4", "G4", ["E5", "E4"]],
-      };*/
-      const sequences = {
-        angry: ["C4", "D4", "F4", "G4", "A#4"],
-        sad: ["E4", "G4", "A4", "A#4", "D5"],
-        happy: ["C4", "E4", "G4", "C5", "G4"],
-        neutral: ["C4", "E4", "G4", "C5", "G4"],
+      // Define audio file paths for different moods
+      const audioFiles = {
+        angry: "https://matbog23.github.io/ap-cc-audiofiles/angry.mp3",
+        sad: "https://matbog23.github.io/ap-cc-audiofiles/sad.mp3",
+        happy: "https://matbog23.github.io/ap-cc-audiofiles/happy.mp3",
+        excited: "https://matbog23.github.io/ap-cc-audiofiles/confused.mp3",
+        confused: "https://matbog23.github.io/ap-cc-audiofiles/excited.mp3",
+        neutral: "https://matbog23.github.io/ap-cc-audiofiles/neutral.mp3",
       };
+      //excited and consfused are switched because of the wrong file names
 
-      // Function to play music based on mood
+      // Function to preload audio files
+      async function preloadAudioFiles() {
+        for (const mood in audioFiles) {
+          const audioFile = audioFiles[mood];
+          await new Promise((resolve) => {
+            const player = new Tone.Player(audioFile, () => {
+              console.log(`Audio file for ${mood} loaded.`);
+              resolve();
+            }).toDestination();
+            player.autostart = false;
+            player.loop = true; // Enable looping
+            player.load();
+          });
+        }
+      }
+
       function playMusic(mood) {
-        // Check if the mood is different from the current sequence
-        if (mood !== "" && mood !== currentSequenceMood) {
-          // Stop the current sequence if it exists
-          if (currentSequence !== null) {
-            currentSequence.stop();
+        // Check if the mood is different from the current player
+        if (mood !== "" && mood !== currentMood) {
+          // Stop the current player if it exists
+          if (currentPlayer !== null) {
+            currentPlayer.stop();
           }
 
-          const notes = sequences[mood];
-          const synth = new Tone.Synth().toDestination();
-          const sequence = new Tone.Sequence(
-            (time, note) => {
-              synth.triggerAttackRelease(note, "8n", time);
-            },
-            notes,
-            "8n"
-          );
+          const audioFile = audioFiles[mood];
+          const player = new Tone.Player(audioFile).toDestination();
+          player.autostart = true;
+          player.loop = true; // Enable looping for new player
 
-          // Start the music only if it's not already playing
-          if (!isMusicPlaying) {
-            Tone.start(); // Start Tone.js audio context
-            Tone.Transport.start();
-            sequence.start();
-            isMusicPlaying = true;
-          } else {
-            // Update the sequence if music is already playing
-            sequence.start();
-          }
-
-          // Update the current sequence and mood
-          currentSequence = sequence;
-          currentSequenceMood = mood;
+          // Update the current player and mood
+          currentPlayer = player;
+          currentMood = mood;
+        } else if (
+          mood === currentMood &&
+          currentPlayer !== null &&
+          !currentPlayer.state
+        ) {
+          // If the mood remains the same and the player exists but stopped,
+          // restart it
+          currentPlayer.start();
         }
       }
 
@@ -75,13 +79,16 @@
         "startPlaybackButton"
       );
       startPlaybackButton.addEventListener("click", async function () {
+        // Preload audio files before starting playback
+        await preloadAudioFiles();
+
         // Send request to server to get sentiment
         // For demonstration purposes, let's assume sentiment is "happy"
         const sentiment = "";
         console.log("Sentiment requested:", sentiment);
 
-        // Await the playMusic function
-        playMusic(sentiment); //await
+        // Play music based on sentiment
+        playMusic(sentiment);
 
         // This code will only execute after playMusic has finished
         console.log("Music playback complete.");
@@ -92,8 +99,11 @@
         const sentiment = event.data;
         console.log("Received sentiment from server:", sentiment);
 
+        // Preload audio files before starting playback
+        await preloadAudioFiles();
+
         // Play music based on sentiment
-        playMusic(sentiment); //await
+        playMusic(sentiment);
 
         // This code will only execute after playMusic has finished
         console.log("Music playback complete.");

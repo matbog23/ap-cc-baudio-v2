@@ -36,7 +36,7 @@ def analyzeTextSentiment(prompt):
         "top_p": 1,
         "n": 1,
         "messages": [
-            {"role": "system", "content": "You are a system that understands the data gathered from a book using OCR, analyzes the text and then returns the predominant feeling in a single word. You can only pick from the list: happy, sad, angry or neutral. Keep in mind that youa re reading children books so the feelings are not too complex."},
+            {"role": "system", "content": "You are a system that understands the data gathered from a book using OCR, analyzes the text and then returns the predominant feeling in a single word. You can only pick from the list: happy, sad, angry, excited, confused or neutral. Keep in mind that you are reading children books so the feelings are not too complex, you are allowed to predict the feeling that the user would feel in certain situations. Just make sure to pick from the given list."},
             {"role": "user", "content": "Please analyze the text and determine the predominant feeling. Answer in a single word from the list: happy, sad, angry or neutral." + prompt},
             {"role": "assistant", "content": "You can only answer with a single word, from the list: happy, sad, angry or neutral. write the answer in lower case."},
         ]
@@ -58,7 +58,7 @@ async def send_result(websocket, path):
     print("Client connected")
 
     # Capture frame-by-frame
-    cap = cv2.VideoCapture(1)  # adjust, 0 = computer webcam, 1 = external webcam
+    cap = cv2.VideoCapture(0)  # adjust, 0 = computer webcam, 1 = external webcam
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1080)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
@@ -103,7 +103,7 @@ async def send_result(websocket, path):
                 await websocket.send(sentiment)
 
             # Wait for 10 seconds
-            await asyncio.sleep(3) #await
+            await asyncio.sleep(10) #await
 
     finally:
         # Release the capture
